@@ -399,9 +399,29 @@ Tributario (Decreto 170-2016, Art. 66). Los PDF y las extracciones están en
 
 ```
 bundle install
+bundle exec rake        # pruebas y linter
 bundle exec rake test
+bundle exec rake rubocop
 ```
+
+### Publicar una versión
+
+Un número de versión publicado en RubyGems **no se puede reutilizar**: `gem yank`
+retira el paquete pero deja el número quemado para siempre. Por eso `rake build`
+y `rake release` ejecutan las pruebas y el linter antes de hacer nada.
+
+```
+gem signin                      # una sola vez por máquina; requiere MFA
+# subir la versión en lib/invoicehn/version.rb
+# anotar los cambios en CHANGELOG.md
+bundle exec rake release        # etiqueta vX.Y.Z, la sube y publica la gema
+```
+
+`rake release` se niega a continuar si el árbol de trabajo tiene cambios sin
+confirmar o si la etiqueta ya existe.
 
 ## Licencia
 
-MIT.
+MIT. El texto de la licencia incluye la exención de garantías habitual: esta
+gema ayuda a cumplir los requisitos de contenido del Reglamento, pero la
+responsabilidad tributaria sigue siendo del obligado tributario.
