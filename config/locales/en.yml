@@ -1,0 +1,89 @@
+# Command-line interface strings.
+#
+# IMPORTANT: this catalog does NOT contain the fiscal document's text. The
+# invoice legends ("FACTURA", "Original: Cliente", "CONSUMIDOR FINAL",
+# "ANULADA") are legal text fixed by the Reglamento and live as constants in
+# Invoicehn::Renderers::Text. Translating them would produce an invalid
+# document — an English CLI still issues a Spanish invoice.
+en:
+  setup:
+    title: "Issuer configuration (Art. 10 num. 1)"
+    intro: "These details are printed on every invoice. All are mandatory."
+    rtn: "Issuer RTN (14 digits)"
+    legal_name: "Legal name or razón social"
+    trade_name: "Trade name"
+    headquarters: "Head office address"
+    branch: "Establishment address (leave blank if head office)"
+    phone: "Phone number"
+    email: "Email address"
+    saved: "Issuer saved to %{path}"
+
+  auth:
+    title: "Register a SAR authorization"
+    intro: |
+      The CAI, authorized range and issue deadline are granted by SAR
+      (Arts. 59-61). Copy them from the authorization document; this program
+      does not generate them.
+    cai: "CAI (Clave de Autorización de Impresión)"
+    establishment: "Establishment (3 digits; head office = 000)"
+    emission_point: "Emission point (3 digits)"
+    range_start: "First authorized number (8 digits)"
+    range_end: "Last authorized number (8 digits)"
+    limit_date: "Issue deadline (YYYY-MM-DD)"
+    saved: "Authorization registered: %{range}"
+    none: "No authorizations on file. Use `invoicehn auth add`."
+    list_header: "Registered authorizations"
+
+  invoice:
+    customer_kind: "Customer type"
+    kind_consumidor_final: "Final consumer"
+    kind_taxpayer: "Taxpayer (claims crédito fiscal)"
+    kind_exonerado: "Exonerated purchaser"
+    customer_name: "Customer name or legal name"
+    customer_rtn: "Customer RTN"
+    id_type: "Identification document type"
+    id_number: "Identification document number"
+    purchase_order: "Orden de Compra Exenta number"
+    exoneration_registry: "Constancia del Registro de Exonerados number"
+    sag_registry: "SAG registry number"
+    add_line: "Add a line item?"
+    description: "Detailed description of the good or service"
+    quantity: "Quantity"
+    unit_price: "Unit price"
+    discount: "Discount granted (0 if none)"
+    treatment: "ISV treatment"
+    currency: "Currency"
+    exchange_rate: "Exchange rate in force on the issue date"
+    exchange_source: "Exchange rate source"
+    notes: "Additional notes (optional)"
+    confirm: "Issue this invoice?"
+    cancelled: "Issuance cancelled. No number was consumed."
+    issued: "Invoice issued: %{correlative}"
+
+  check:
+    title: "Billing system status"
+    issuer_ok: "Issuer configured and complete"
+    issuer_missing: "Issuer details missing: %{fields}"
+    issuer_absent: "No issuer configured. Run `invoicehn setup`."
+    auth_active: "Current authorization: %{cai}"
+    auth_absent: "No current authorization for %{identifier}"
+    next: "Next number: %{correlative}"
+    remaining: "Documents available: %{count}"
+    days: "Days until the deadline: %{days}"
+    lapsed: |
+      Warning: %{count} authorization(s) expired holding unused documents.
+      Art. 42 requires reporting this to SAR within the first 10 business days
+      of the following month.
+    ready: "Ready to issue."
+    not_ready: "Not ready to issue."
+
+  errors:
+    not_initialized: "No issuer configured. Run `invoicehn setup` first."
+    not_found: "Invoice %{correlative} not found"
+    compliance: "The invoice does not meet the legal requirements:"
+
+  common:
+    yes: "Yes"
+    no: "No"
+    total: "Total"
+    cancel: "Cancel"

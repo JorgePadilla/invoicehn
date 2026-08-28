@@ -1,0 +1,168 @@
+TEXTO VIGENTE — ARTÍCULOS 10 Y 11
+Reglamento del Régimen de Facturación, Otros Documentos Fiscales y
+Registro Fiscal de Imprentas — ACUERDO 481-2017
+Según reformas: Acuerdos 609-2017, 725-2018 y 817-2018
+
+Fuente: "Texto Consolidado" publicado por el SAR (Dirección Nacional Jurídico,
+julio 2020) — https://www.sar.gob.hn/download/texto-consolidado-reglamento-del-
+regimen-de-facturacion-otros-documentos-fiscales-y-registro-fiscal-de-imprentas-
+contenido-en-el-acuerdo-481-2017-segun-acuerdos-609-2017-725-2018-y-817-2018/
+(?wpdmdl=7038)
+
+VIGENCIA: al 2026-08-28, la categoría "Leyes de Facturación" del SAR lista
+únicamente tres reformas al Acuerdo 481-2017 — 609-2017 (primera), 725-2018
+(segunda) y 817-2018 (tercera). No aparece ninguna reforma posterior a 2018 que
+modifique los Artículos 10 u 11. (El Acuerdo 231-2020 es una autorización
+transitoria de impresión, no una reforma al articulado.)
+
+Notas de reforma que trae el propio texto consolidado:
+  Art. 10 — nota 3: "Reformado por el Art. 1 del Acuerdo 725-2018 de fecha 13 de
+  agosto del 2018, publicado en el Diario Oficial La Gaceta de fecha 12 de
+  noviembre de 2018 (agregó numeral 10)."
+  Art. 11 — nota 4: "Reformado por: Art. 1 del Acuerdo 609-2017 publicado en el
+  Diario Oficial La Gaceta de fecha 2 de octubre de 2017; Art. 1 del Acuerdo
+  725-2018 de fecha 13 de agosto del 2018 publicado en el Diario Oficial La
+  Gaceta de fecha 12 de noviembre de 2018 (esta reforma agrega el inciso l al
+  numeral 1) y el inciso j al numeral 2))."
+
+================================================================================
+ARTÍCULO 10. FACTURA. Requisitos del formato:
+================================================================================
+
+1. Datos de identificación del emisor:
+
+  a) Registro Tributario Nacional (RTN);
+  b) Nombres y Apellidos, Razón o Denominación Social, según corresponda. Los
+     Obligados Tributarios como comerciantes individuales podrán sustituir sus
+     Nombres y Apellidos por el nombre comercial registrado en el Registro
+     Tributario Nacional (RTN);
+  c) Nombre Comercial;
+  d) Dirección de la casa matriz y del establecimiento donde esté localizado el
+     punto de emisión;
+  e) Número telefónico; y,
+  f) Correo Electrónico que notifique a través del contrato de adhesión
+     correspondiente.
+
+2. Denominación del documento: "Factura";
+
+3. Clave de Autorización de Impresión (CAI), otorgada por la Administración
+   Tributaria;
+
+4. Fecha límite de emisión, vigente;
+
+5. Rango autorizado, vigente;
+
+6. Destino de los ejemplares de la factura:
+
+  a) Original: Cliente; y,
+  b) Copia: Obligado tributario emisor.
+
+7. Número correlativo de la Factura. Constará de dieciséis (16) dígitos
+   (NNN-NNN-NN-NNNNNNNN), los cuales se detallan así:
+
+  a) Los tres primeros dígitos identificarán al establecimiento del Obligado
+     Tributario, en función al código asignado por la Administración Tributaria
+     al momento de su registro y para la casa matriz el sistema asignará el
+     código 000;
+  b) Los siguientes tres dígitos identificarán al punto de emisión, en función
+     al código asignado por la Administración Tributaria;
+  c) Los siguientes dos dígitos identificarán el código de la Factura, según el
+     siguiente detalle: 01 = Factura;
+  d) Los ocho dígitos restantes, corresponderán a la numeración correlativa de
+     la Factura que deberá iniciarse en uno (00000001). Una vez completados los
+     ocho dígitos (99999999), se reiniciará la numeración correlativa. Los
+     primeros tres grupos de dígitos, se denominan identificador del documento,
+     (literales a, b, y c anteriores) ya que identifica el establecimiento,
+     punto de emisión y tipo de documento.
+
+8. Datos del Adquirente exonerado:
+
+  a) Número correlativo de la Orden de Compra Exenta;
+  b) Número correlativo de la Constancia del Registro de Exonerados;
+  c) Número identificativo del Registro de la Secretaría de Estado en el
+     Despacho de Agricultura y Ganadería.
+
+9. Datos de la imprenta, para las Facturas preimpresas:
+
+  a) Nombres y Apellidos, Razón o Denominación Social, según corresponda. Las
+     personas naturales podrán sustituir sus Nombres y Apellidos por el nombre
+     comercial registrado en el Registro Tributario Nacional (RTN);
+  b) Registro Tributario Nacional; y,
+  c) Número de Certificado de autorización del Registro Fiscal de Imprentas.
+
+10. Descuentos y rebajas otorgados.
+    [NUEVO — agregado por Acuerdo 725-2018, Art. 1]
+
+================================================================================
+ARTÍCULO 11. REQUISITOS A SER COMPLETADOS AL MOMENTO DE LA EMISIÓN DE LA FACTURA.
+================================================================================
+
+1. Cuando la venta de bienes y/o prestación de servicios se realice a Obligados
+   Tributarios que requieren sustentar crédito fiscal en el caso de compras
+   gravadas, costos o gastos, en la factura debe consignarse los requisitos
+   siguientes:
+
+  a) Nombre y Apellido, Razón o Denominación Social del cliente, según
+     corresponda;
+  b) Registro Tributario Nacional del cliente;
+  c) Fecha de emisión.
+  d) Descripción detallada del bien vendido o del servicio prestado;
+  e) Cantidad de unidades de bienes vendidos;
+  f) Valor unitario del bien vendido o del servicio prestado;
+  g) Discriminación de los valores exentos, exonerados y de los gravados con
+     alícuota cero, cuando corresponda;
+  h) Subtotales sujetos a los impuestos discriminados por tarifa o alícuota;
+  i) Discriminación de los impuestos por tarifa o alícuota;
+  j) Denominación literal de la Moneda Nacional Lempira o símbolo (L), manual o
+     impreso;
+  k) Importe total en números y letras de la operación realizada;
+  l) Discriminación de los descuentos y rebajas otorgadas.
+     [NUEVO — agregado por Acuerdo 725-2018, Art. 1]
+     [NOTA: el texto consolidado del SAR dice "otorgadas"; La Gaceta 34,792
+      (texto original del Acuerdo 725-2018) dice "otorgados".]
+
+2. Cuando la venta se realice a consumidores finales:
+
+  a) Nombre y apellido, Número de identificación o consignar la leyenda
+     "CONSUMIDOR FINAL"; salvo lo establecido en el último párrafo de este
+     Artículo;
+  b) Descripción detallada del bien vendido o del servicio prestado;
+  c) Cantidad de unidades de bienes vendidos;
+  d) Valor unitario del bien vendido o del servicio prestado;
+  e) Discriminación de los valores exentos, exonerados y de los gravados con
+     alícuota cero, cuando corresponda;
+  f) Discriminación de los impuestos por tarifa o alícuota;
+  g) Denominación literal de la Moneda Nacional Lempira o símbolo (L), manual o
+     impreso;
+  h) Importe total de la operación realizada; y,
+  i) Fecha de emisión.
+  j) Discriminación de los descuentos y rebajas otorgados.
+     [NUEVO — agregado por Acuerdo 725-2018, Art. 1]
+
+En ambos casos, cuando el Obligado Tributario emita facturas con otra
+denominación monetaria, debe indicar la tasa de cambio vigente a la fecha de
+emisión.
+
+Cuando la venta de bienes o prestación de servicios se realice al Consumidor
+Final y excediera la suma de diez mil Lempiras (L10,000.00), debe consignarse
+obligatoriamente los datos del cliente, indicando nombres y apellidos, el tipo y
+número de documento de identificación en el espacio del RTN. El monto señalado
+en el párrafo podrá ser modificado por la Secretaría de Estado en el Despacho de
+Finanzas mediante Acuerdo de Carácter General.
+   [MODIFICADO por Acuerdo 609-2017, Art. 1 — antes decía "en el espacio
+    destinado al RTN", "el presente párrafo", y "modificado por la
+    Administración Tributaria".]
+
+3. Para respaldar el crédito fiscal en los casos que la factura sustente ventas
+   exentas y gravadas, se reconocerán únicamente las ventas gravadas.
+
+4. Cuando la venta de bienes y/o prestación de servicios se realicen a Obligados
+   Tributarios Exonerados se debe consignar el Número correlativo de la Orden de
+   Compra Exenta, Número correlativo de la Constancia del Registro de Exonerados
+   o, el Número identificativo del Registro Único de Personas Naturales del
+   Sector Agroindustrial, según corresponda. Para efectos de verificación y
+   fiscalización de las ventas antes descritas, la Secretaría de Estado en el
+   Despacho de Finanzas y la Secretaría de Estado en el Despacho de Agricultura
+   y Ganadería, facilitarán la información a la Administración Tributaria y la
+   Administración Aduanera para ejercer dichas actuaciones según el ámbito de
+   sus competencias.

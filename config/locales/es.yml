@@ -1,0 +1,87 @@
+# Textos de la interfaz de línea de comandos.
+#
+# IMPORTANTE: este catálogo NO contiene el texto del documento fiscal. Las
+# leyendas de la Factura ("FACTURA", "Original: Cliente", "CONSUMIDOR FINAL",
+# "ANULADA") son texto legal fijado por el Reglamento y viven como constantes en
+# Invoicehn::Renderers::Text. Traducirlas produciría un documento inválido.
+es:
+  setup:
+    title: "Configuración del emisor (Art. 10 num. 1)"
+    intro: "Estos datos se imprimen en cada factura. Todos son obligatorios."
+    rtn: "RTN del emisor (14 dígitos)"
+    legal_name: "Nombre o razón social"
+    trade_name: "Nombre comercial"
+    headquarters: "Dirección de la casa matriz"
+    branch: "Dirección del establecimiento (dejar vacío si es la casa matriz)"
+    phone: "Número telefónico"
+    email: "Correo electrónico"
+    saved: "Emisor guardado en %{path}"
+
+  auth:
+    title: "Registrar autorización del SAR"
+    intro: |
+      El CAI, el rango autorizado y la fecha límite de emisión los otorga el SAR
+      (Arts. 59-61). Cópielos del documento de autorización; este programa no los genera.
+    cai: "CAI (Clave de Autorización de Impresión)"
+    establishment: "Establecimiento (3 dígitos; casa matriz = 000)"
+    emission_point: "Punto de emisión (3 dígitos)"
+    range_start: "Correlativo inicial autorizado (8 dígitos)"
+    range_end: "Correlativo final autorizado (8 dígitos)"
+    limit_date: "Fecha límite de emisión (AAAA-MM-DD)"
+    saved: "Autorización registrada: %{range}"
+    none: "No hay autorizaciones registradas. Use «invoicehn auth add»."
+    list_header: "Autorizaciones registradas"
+
+  invoice:
+    customer_kind: "Tipo de cliente"
+    kind_consumidor_final: "Consumidor final"
+    kind_taxpayer: "Obligado tributario (sustenta crédito fiscal)"
+    kind_exonerado: "Adquirente exonerado"
+    customer_name: "Nombre o razón social del cliente"
+    customer_rtn: "RTN del cliente"
+    id_type: "Tipo de documento de identificación"
+    id_number: "Número de documento de identificación"
+    purchase_order: "Número de Orden de Compra Exenta"
+    exoneration_registry: "Número de Constancia del Registro de Exonerados"
+    sag_registry: "Número del Registro SAG"
+    add_line: "¿Agregar una línea de detalle?"
+    description: "Descripción detallada del bien o servicio"
+    quantity: "Cantidad de unidades"
+    unit_price: "Valor unitario"
+    discount: "Descuento otorgado (0 si no aplica)"
+    treatment: "Tratamiento del ISV"
+    currency: "Moneda"
+    exchange_rate: "Tasa de cambio vigente a la fecha de emisión"
+    exchange_source: "Fuente de la tasa de cambio"
+    notes: "Notas adicionales (opcional)"
+    confirm: "¿Emitir esta factura?"
+    cancelled: "Emisión cancelada. No se consumió ningún correlativo."
+    issued: "Factura emitida: %{correlative}"
+
+  check:
+    title: "Estado del sistema de facturación"
+    issuer_ok: "Emisor configurado y completo"
+    issuer_missing: "Faltan datos del emisor: %{fields}"
+    issuer_absent: "No hay emisor configurado. Ejecute «invoicehn setup»."
+    auth_active: "Autorización vigente: %{cai}"
+    auth_absent: "No hay autorización vigente para %{identifier}"
+    next: "Próximo correlativo: %{correlative}"
+    remaining: "Documentos disponibles: %{count}"
+    days: "Días hasta la fecha límite: %{days}"
+    lapsed: |
+      Atención: %{count} autorización(es) vencieron con documentos sin utilizar.
+      El Art. 42 obliga a comunicarlo al SAR dentro de los primeros 10 días
+      hábiles del mes siguiente.
+    ready: "Listo para emitir."
+    not_ready: "No se puede emitir todavía."
+
+  errors:
+    not_initialized: "No se ha configurado el emisor. Ejecute «invoicehn setup» primero."
+    not_found: "No existe la factura %{correlative}"
+    compliance: "La factura no cumple los requisitos legales:"
+
+  common:
+    yes: "Sí"
+    no: "No"
+    total: "Total"
+    cancel: "Cancelar"

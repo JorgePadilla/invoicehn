@@ -1,0 +1,66 @@
+AllCops:
+  TargetRubyVersion: 3.1
+  NewCops: enable
+  Exclude:
+    - "doc/**/*"
+    - "vendor/**/*"
+
+# The compliance rules and renderers read as one continuous specification;
+# splitting them for length would make them harder to check against the decree.
+Metrics/MethodLength:
+  Max: 40
+Metrics/ClassLength:
+  Max: 300
+Metrics/ModuleLength:
+  Max: 200
+Metrics/CyclomaticComplexity:
+  Max: 12
+Metrics/PerceivedComplexity:
+  Max: 12
+Metrics/BlockLength:
+  Exclude:
+    - "test/**/*"
+    - "*.gemspec"
+
+# Renderers and the CLI reports are linear layout code: each statement places
+# one legally required field. Splitting them to satisfy a complexity metric
+# would make them harder to check against the articles they implement.
+Metrics/AbcSize:
+  Max: 40
+  Exclude:
+    - "lib/invoicehn/renderers/*.rb"
+    - "lib/invoicehn/cli/*.rb"
+
+# Invoice#initialize takes the document's fields; there is no smaller set.
+Metrics/ParameterLists:
+  Max: 8
+  Exclude:
+    - "lib/invoicehn/invoice.rb"
+
+Layout/LineLength:
+  Max: 120
+
+Style/Documentation:
+  Enabled: true
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+
+# Spanish identifiers and quotations from the decree are not ASCII.
+Style/AsciiComments:
+  Enabled: false
+
+# gravado_15 / gravado_18 / gravado_0 are the tax rates themselves, named after
+# the percentages the law sets. "gravado15" would obscure that.
+Naming/VariableNumber:
+  Enabled: false
+
+# format("%08d", n) is clearer than named tokens for fixed-width fiscal numbers.
+Style/FormatStringToken:
+  Enabled: false
+
+# Compliance rules legitimately return the same violation shape from more than
+# one branch.
+Lint/DuplicateBranch:
+  Enabled: false
