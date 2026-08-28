@@ -1,5 +1,8 @@
 # invoicehn
 
+[![CI](https://github.com/JorgePadilla/invoicehn/actions/workflows/ci.yml/badge.svg)](https://github.com/JorgePadilla/invoicehn/actions/workflows/ci.yml)
+[![Gem Version](https://badge.fury.io/rb/invoicehn.svg)](https://rubygems.org/gems/invoicehn)
+
 Facturación para Honduras conforme al **Reglamento del Régimen de Facturación,
 Otros Documentos Fiscales y Registro Fiscal de Imprentas** (Acuerdo No. 481-2017
 y sus reformas). Biblioteca Ruby más una interfaz de terminal.
