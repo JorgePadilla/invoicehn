@@ -5,7 +5,8 @@
 
 Facturación para Honduras conforme al **Reglamento del Régimen de Facturación,
 Otros Documentos Fiscales y Registro Fiscal de Imprentas** (Acuerdo No. 481-2017
-y sus reformas). Biblioteca Ruby más una interfaz de terminal.
+y sus reformas). Emite **Facturas** (tipo 01), **Notas de Crédito** (tipo 06) y
+**Notas de Débito** (tipo 07). Biblioteca Ruby más una interfaz de terminal.
 
 ```
 invoicehn setup      # datos del emisor (Art. 10 num. 1)
@@ -22,7 +23,8 @@ Esto es lo primero que debe quedar claro, porque el software sólo cubre una mit
 de lo que la ley exige.
 
 **Cubre el contenido del documento.** Todos los campos que exigen los Artículos
-10 (requisitos del formato) y 11 (requisitos al momento de la emisión): el
+10 (requisitos del formato) y 11 (requisitos al momento de la emisión) para la
+Factura, y los Artículos 25-26 y 27-28 para las Notas de Crédito y de Débito: el
 correlativo de 16 dígitos, el control del CAI, del rango autorizado y de la fecha
 límite de emisión, la discriminación del ISV por tarifa, los descuentos, el total
 en números y letras, y el redondeo estatutario.
@@ -88,6 +90,10 @@ invoicehn auth add --cai "ABCD12-345678-9ABCDE-F01234-567890-AB" \
   --limit "2027-06-30"
 ```
 
+El tercer grupo del correlativo es el **tipo de documento**, según la tabla
+vigente tras el Acuerdo 609-2017 (ver *Los códigos de tipo de documento* más
+abajo): `01` Factura, `06` Nota de Crédito, `07` Nota de Débito.
+
 Un mismo identificador acumula autorizaciones con el tiempo: cuando un rango se
 agota y el SAR concede otro que continúa la numeración, se registra el nuevo sin
 borrar el anterior. El asignador elige la autorización vigente que cubra el
@@ -124,6 +130,39 @@ O desde un archivo, para integrarlo con otro sistema:
 ```
 invoicehn issue -f venta.json
 ```
+
+### Notas de Crédito y de Débito desde un archivo
+
+Cada tipo de documento lleva su propio identificador, su propio contador y su
+propia autorización del SAR (Art. 59: *"La autorización será por punto de
+emisión y por tipo de documento"*). Registre primero el CAI de las notas:
+
+```
+invoicehn auth add --cai "..." --from "000-001-06-00000001" \
+  --to "000-001-06-00000500" --limit "2027-06-30"
+```
+
+El archivo es el de una venta más `reference` (el correlativo de la factura a
+la que se aplica) y `motivo`:
+
+```json
+{
+  "customer": { "kind": "taxpayer", "name": "Distribuidora del Norte, S.A.",
+                "rtn": "05019005123456" },
+  "items": [{ "description": "Devolución: cemento gris bolsa 42.5 kg",
+              "quantity": 2, "unit_price": "235.00", "treatment": "gravado_15" }],
+  "reference": "000-001-01-00000001",
+  "motivo": "Devolución de 2 bolsas dañadas"
+}
+```
+
+```
+invoicehn issue -f nota.json --identifier 000-001-06   # Nota de Crédito
+invoicehn issue -f nota.json --identifier 000-001-07   # Nota de Débito
+```
+
+Si la factura se emitió fuera de esta instalación, `reference` puede ser un
+objeto con sus tres datos: `{"correlative": "...", "cai": "...", "issue_date": "AAAA-MM-DD"}`.
 
 ### 4. Consultar, anular, exportar
 
@@ -196,6 +235,76 @@ issuance = Invoicehn::Issuance.new
 factura = issuance.issue(customer: cliente, line_items: lineas)
 ```
 
+### Notas de Crédito y de Débito
+
+```ruby
+# Nota de Crédito (tipo 06) — devoluciones, descuentos posteriores, anulación
+# de operaciones (Art. 4 num. 32).
+nc = issuance.issue_credit_note(
+  reference: "000-001-01-00000042",           # factura en el store: CAI y fecha se copian
+  motivo: "Devolución de 2 bolsas dañadas",   # Art. 26 num. 4
+  customer: cliente,                          # con RTN: Art. 26 num. 1-2
+  line_items: lineas_devueltas
+)
+
+# Nota de Débito (tipo 07) — ajustes a cargo del adquirente (Art. 4 num. 31).
+nd = issuance.issue_debit_note(
+  reference: Invoicehn::DocumentReference.new( # documento emitido fuera del store
+    correlative: "000-001-01-00009999",
+    cai: "ABCD12-345678-9ABCDE-F01234-567890-AB",
+    issue_date: Date.new(2026, 9, 1)
+  ),
+  motivo: "Flete adicional",
+  customer: cliente,
+  line_items: lineas
+)
+```
+
+Las firmas exactas:
+
+```ruby
+Invoicehn::Issuance#issue(customer:, line_items:, identifier: "000-001-01",
+                          currency: "HNL", exchange_rate: nil, notes: nil,
+                          issue_date: Invoicehn.today, reference: nil, motivo: nil)
+Invoicehn::Issuance#issue_credit_note(reference:, motivo:, customer:, line_items:,
+                                      identifier: "000-001-06", **opciones_de_issue)
+Invoicehn::Issuance#issue_debit_note(reference:, motivo:, customer:, line_items:,
+                                     identifier: "000-001-07", **opciones_de_issue)
+Invoicehn::Issuance#annul(correlative, reason:, on: Invoicehn.today)  # Factura o nota
+Invoicehn::DocumentReference.new(correlative:, cai:, issue_date:)
+```
+
+El **tipo de documento lo decide el identificador**: `NNN-NNN-01` Factura,
+`NNN-NNN-06` Nota de Crédito, `NNN-NNN-07` Nota de Débito. `issue` con un
+identificador `-06`/`-07` y `reference:`/`motivo:` es equivalente a los dos
+atajos. `reference:` acepta:
+
+- un correlativo (`String` o `Correlative`) de un documento que el store tiene:
+  se busca y se copian su CAI y su fecha de emisión;
+- un `DocumentReference` con los tres datos (Arts. 26 y 28 num. 3), para un
+  documento emitido fuera del store. Si el store sí lo tiene, los datos se
+  cotejan y una discrepancia se rechaza.
+
+Cuando el original está en el store, además se rechaza la nota si el original
+está ANULADO o si su adquirente tiene otro RTN. Esas dos verificaciones son de
+coherencia, no texto del Reglamento.
+
+### El reloj: la fecha de Honduras, no la del servidor
+
+Honduras está en UTC-6 todo el año. Un servidor en UTC que leyera `Date.today`
+estamparía, desde las 18:00 de Tegucigalpa, la fecha de **mañana** como fecha de
+emisión, y daría por vencida una autorización horas antes de su fecha límite
+(Art. 62). Todas las fechas por defecto de la gema (emisión, anulación,
+validación, `health`, vigencia de la autorización) salen de `Invoicehn.today`:
+
+```ruby
+# config/initializers/invoicehn.rb, con config.time_zone = "America/Tegucigalpa"
+Invoicehn.configure { |c| c.today = -> { Date.current } }
+```
+
+Sin configurar, el reloj es `Date.today` (la zona del proceso), como en la
+0.1.0. El reloj debe devolver un `Date`; un `Time` o un `DateTime` se rechazan.
+
 ---
 
 ## Decisiones que conviene conocer
@@ -255,12 +364,60 @@ RTN reales. Se valida longitud y dígitos, nada más.
 El asignador se lleva por la terna (establecimiento, punto de emisión, tipo de
 documento) — el *identificador del documento* del Art. 10 num. 7 — y trabaja bajo
 un candado exclusivo de archivo, de modo que dos procesos simultáneos no pueden
-repetir ni omitir un número. La asignación y el guardado ocurren dentro del mismo
-candado: si el guardado falla, el correlativo no se consume.
+repetir ni omitir un número. La asignación, el guardado y el asiento contable
+ocurren dentro del mismo candado y son todo o nada: si el guardado falla, el
+correlativo no se consume; si el libro contable rechaza el asiento, el documento
+recién guardado se borra antes de que avance el contador. (La 0.1.0 dejaba el
+documento en disco y el contador atrás, y toda emisión posterior fallaba.)
 
 Un documento emitido es inmutable. La única corrección es la anulación
 (Art. 41), que marca el registro con la leyenda **ANULADA** y **conserva el
 correlativo consumido**.
+
+### Los códigos de tipo de documento son los reformados
+
+El Acuerdo 609-2017 (*La Gaceta* 34,457) reescribió el literal c) de los
+artículos de cada documento. La tabla vigente, según el texto consolidado:
+
+| Código | Documento | Artículo |
+|---|---|---|
+| 01 | Factura | 10 num. 7 lit. c |
+| 04 | Recibo por Honorarios Profesionales | 18 num. 7 lit. c (no reformado) |
+| 05 | Comprobante de Retención | 33 num. 5 lit. c |
+| 06 | **Nota de Crédito** | 25 num. 5 lit. c |
+| 07 | **Nota de Débito** | 27 num. 5 lit. c |
+| 08 | Guía de Remisión | 29 num. 4 lit. c |
+| 09 | Ticket | 17 num. 4 lit. a |
+| 10 | Factura Prevalorada | 15 num. 6 lit. c |
+| 11 | Boleta de Compra | 20 num. 5 lit. c |
+| 12 | Constancia de Donación | 23 num. 7 lit. c |
+
+El texto original de 2017 numeraba distinto (02 Prevalorada, 03 Ticket, 07 Nota
+de Crédito, 08 Nota de Débito, 10 Retención...). La 0.1.0 traía esa tabla; la
+0.2.0 la corrige. 02 y 03 quedaron sin asignar y se rechazan. La gema **emite**
+01, 06 y 07; los demás códigos se reconocen (para validar referencias) pero no
+se emiten.
+
+### Las notas exigen el RTN del adquirente y se emiten en lempiras
+
+Los Arts. 26 y 28 num. 1-2 piden *"Nombres y Apellidos, Razón o Denominación
+Social del adquirente"* y *"Número de Registro Tributario Nacional (RTN) del
+adquirente"*. A diferencia del Art. 11 num. 2 para la Factura, no ofrecen la
+alternativa de CONSUMIDOR FINAL: una nota a un adquirente sin RTN se rechaza.
+
+Los Arts. 26 num. 9 y 28 num. 8 piden la *"Denominación literal de la Moneda
+Nacional Lempira o símbolo (L)"*. El permiso de emitir en *"otra denominación
+monetaria"* con la tasa de cambio está en el párrafo final del Art. 11 y habla
+sólo de *facturas*; los artículos de las notas no tienen ese párrafo. Una nota
+en otra moneda se rechaza.
+
+La Nota de Crédito debe aplicarse a un **Comprobante Fiscal** (Art. 4 num. 32,
+Art. 26 num. 3 lit. b; la lista está en el Art. 6). La Nota de Débito admite
+*"el Comprobante Fiscal o el documento"* (Art. 28 num. 3 lit. b). Ninguno de
+los artículos fija un monto máximo para la nota, y la gema no inventa uno.
+
+La Nota de Crédito imprime en blanco los campos de quien la recibe (nombres,
+identidad y firma, Art. 26 num. 7), que se llenan a mano al entregarla.
 
 ### La fecha de emisión es la del sistema
 
@@ -296,10 +453,10 @@ Cada fila corresponde a pruebas automatizadas.
 | Artículo | Requisito | Implementado en |
 |---|---|---|
 | 10 num. 1 | Datos de identificación del emisor | `Issuer` |
-| 10 num. 2 | Denominación "Factura" | `Renderers::Text` |
+| 10 num. 2 | Denominación "Factura" | `Renderers::Text`, `Renderers::Pdf` |
 | 10 num. 3-5 | CAI, fecha límite y rango vigentes | `Authorization` |
 | 10 num. 6 | Destino de los ejemplares | `Renderers::Text` |
-| 10 num. 7 | Correlativo de 16 dígitos | `Correlative` |
+| 10 num. 7 | Correlativo de 16 dígitos; códigos reformados por el 609-2017 | `Correlative` |
 | 10 num. 8 | Datos del adquirente exonerado | `Customer::Exonerado` |
 | 10 num. 10 | Descuentos y rebajas (formato) | `Renderers::Text` |
 | 11 num. 1 | Requisitos para crédito fiscal | `Compliance::Validator` |
@@ -310,6 +467,13 @@ Cada fila corresponde a pruebas automatizadas.
 | 11 num. 3 | Crédito fiscal sólo por ventas gravadas | `TaxSummary#credito_fiscal_base` |
 | 11 párrafo final | Tasa de cambio a la fecha de emisión | `ExchangeRate` |
 | 12 | Exportaciones con tasa cero | `TaxTreatment::GRAVADO_0` |
+| 25 num. 2, 7 / 27 num. 2, 7 | "Nota de Crédito" / "Nota de Débito"; destino de los ejemplares | `Renderers::Text`, `Renderers::Pdf` |
+| 25 num. 5 / 27 num. 5 | Códigos 06 y 07, serie propia | `Correlative`, `Sequence` |
+| 26 num. 1-2 / 28 num. 1-2 | Nombre y RTN del adquirente | `Compliance::Validator` |
+| 26 num. 3 / 28 num. 3 | CAI, correlativo y fecha del comprobante | `DocumentReference` |
+| 26 num. 4 / 28 num. 4 | Motivo de la emisión | `Invoice#motivo` |
+| 26 num. 7 | Datos y firma de quien recibe la NC | `Renderers::Text`, `Renderers::Pdf` |
+| 26 num. 9 / 28 num. 8 | Moneda Nacional Lempira | `Compliance::Validator` |
 | 41 | Leyenda ANULADA; correlativo conservado | `Invoice#annul` |
 | 42 | Aviso de autorizaciones vencidas sin usar | `invoicehn check` |
 | 43 | Custodia cronológica | `Storage::JsonStore` |
@@ -356,6 +520,95 @@ Invoicehn::Issuance.new(
 
 ---
 
+## Integración con la aplicación anfitriona: store, sequence y ledger
+
+`Invoicehn::Issuance.new(store:, sequence:, ledger:)` acepta cualquier objeto
+que responda a los métodos de abajo (*duck typing*); la gema no depende de
+Rails ni de ActiveRecord. Cuando se inyectan los tres, `Issuance` no toca el
+sistema de archivos: no construye `Config` ni lee `~/.invoicehn`.
+
+### store
+
+| Método | Contrato |
+|---|---|
+| `issuer` → `Issuer` o `nil` | El emisor con los siete datos del Art. 10 num. 1. |
+| `authorizations_for(identifier)` → `Array<Authorization>` | Todas las autorizaciones de ese `NNN-NNN-TT`, vencidas incluidas. |
+| `active_authorization(identifier, next_sequence:, on:)` → `Authorization` o `nil` | Una autorización no vencida en `on` cuyo rango **cubra** `next_sequence` (la de menor inicio si hay varias). `nil` si ninguna lo cubre; no devolver una agotada. Con `next_sequence: nil`, la vigente de menor inicio. |
+| `save_document(document)` → `document` | Guarda el documento (`document.to_h` es su forma serializable). Si ya existe y el nuevo **no** está anulado, lanza `Invoicehn::ImmutableDocument`; la forma anulada reemplaza a la emitida (Art. 41). |
+| `delete_document(document)` → `document` | Borra el documento. `Issuance` lo llama **sólo** para deshacer una emisión cuyo asiento contable falló (dentro del bloque de `allocate`) o una anulación cuyo asiento falló (borra la forma ANULADA y vuelve a guardar la emitida). |
+| `find(correlative)` → `Invoice` | El documento con ese correlativo (`String` o `Correlative`); `Invoicehn::DocumentNotFound` si no existe. `find(c).to_h` debe ser igual a lo guardado, incluidos `reference` y `motivo` de las notas. |
+| `exists?(correlative)` → `Boolean` | |
+
+La CLI usa además `save_issuer`, `authorizations`, `add_authorization`, `all(from:, to:)`, `settings` y `save_settings`; una aplicación que no use la CLI no los necesita.
+
+### sequence
+
+| Método | Contrato |
+|---|---|
+| `allocate(identifier) { \|correlative\| ... }` → valor del bloque | Calcula el siguiente correlativo, lo entrega al bloque **bajo candado** (en Postgres: `SELECT ... FOR UPDATE` dentro de una transacción) y avanza el contador **sólo si el bloque termina sin excepción**. Si el bloque lanza, el contador queda igual y la excepción se propaga. |
+| `peek(identifier)` → `Correlative` | El próximo correlativo, sin consumirlo. |
+| `issued_count(identifier)` → `Integer` | La última secuencia consumida (0 si ninguna). |
+
+Cada identificador (`000-001-01`, `000-001-06`, `000-001-07`...) es una serie
+independiente que empieza en 00000001.
+
+### ledger
+
+| Método | Contrato |
+|---|---|
+| `record(document, event:)` → cualquier cosa | Asienta la emisión (`event: :emision`) o la anulación (`event: :anulacion`). Si lanza, `Issuance` borra el documento recién guardado y el correlativo no se consume. |
+
+`entries(from:, to:)` sólo lo usa la exportación de la CLI. `Ledger::Multi`
+reparte a varios libros, pero no puede deshacer el asiento de uno si el
+siguiente falla: un libro transaccional debería participar en la transacción
+de la aplicación.
+
+Si la aplicación envuelve la emisión en una transacción de base de datos
+(recomendado), cualquier fallo revierte también el contador y el documento.
+
+### Verificar los adaptadores
+
+```ruby
+require "invoicehn/test_support/contracts"
+
+class InvoicehnStoreContractTest < ActiveSupport::TestCase
+  include Invoicehn::TestSupport::StoreContract
+  # Un store con emisor completo y autorización vigente para 000-001-01
+  # (y, opcionalmente, para 000-001-06 para probar las notas).
+  def contract_store = Facturacion::InvoicehnStore.new
+end
+
+class InvoicehnSequenceContractTest < ActiveSupport::TestCase
+  include Invoicehn::TestSupport::SequenceContract
+  def contract_sequence = Facturacion::InvoicehnSequence.new
+end
+
+class InvoicehnLedgerContractTest < ActiveSupport::TestCase
+  include Invoicehn::TestSupport::LedgerContract
+  def contract_ledger = Facturacion::InvoicehnLedger.new
+end
+
+class InvoicehnIssuanceContractTest < ActiveSupport::TestCase
+  include Invoicehn::TestSupport::IssuanceContract   # emite una factura real
+  def contract_store = Facturacion::InvoicehnStore.new
+  def contract_sequence = Facturacion::InvoicehnSequence.new
+  def contract_ledger = Facturacion::InvoicehnLedger.new
+end
+```
+
+`IssuanceContract` emite primero con un libro que rechaza el asiento y verifica
+que no quede documento ni avance el contador; luego emite de verdad y verifica
+que `find` devuelva lo emitido. Fuera de minitest, las mismas verificaciones
+están en `require "invoicehn/testing"` (`Invoicehn::Testing.assert_store_contract`,
+`assert_sequence_contract`, `assert_ledger_contract`, `assert_issuance_round_trip`),
+que lanzan `Invoicehn::Testing::ContractError`. `invoicehn/test_support/memory`
+trae adaptadores en memoria: la implementación completa más corta del contrato,
+útil como modelo.
+
+La CLI (`thor`, `tty-prompt`) y el PDF (`prawn`) no se cargan con
+`require "invoicehn"`: una aplicación Rails los instala como dependencias de la
+gema, pero no los carga si no los usa.
+
 ## Almacenamiento
 
 Por defecto en `~/.invoicehn` (configurable con `INVOICEHN_HOME` o `--data-dir`):
@@ -384,6 +637,10 @@ Textos primarios, por número de *La Gaceta*:
 | 34,457 | Acuerdo 609-2017 (primera reforma) |
 | 34,792 | Acuerdo 725-2018 (segunda reforma — agrega los descuentos) |
 | 34,811 | Acuerdo 817-2018 (tercera reforma) |
+
+El Acuerdo 609-2017 es el que cambió los códigos de tipo de documento; las
+notas siguen los Arts. 25-28 del texto consolidado
+(`doc/fuentes/acuerdo_481_2017_consolidado.txt`, líneas 1300-1497).
 | 33,316 | Decreto 278-2013 (tasas del ISV) |
 
 Más la Ley del Impuesto Sobre Ventas (Decreto-Ley 24, Arts. 3 y 9) y el Código

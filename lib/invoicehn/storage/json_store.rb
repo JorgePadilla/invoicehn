@@ -58,13 +58,16 @@ module Invoicehn
 
       # The authorization that should be used next for an identifier: still
       # current, and with room left in its range.
-      def active_authorization(identifier, next_sequence: nil, on: Date.today)
+      #
+      # With next_sequence, only an authorization whose range covers that
+      # number qualifies. An exhausted range is not "active" just because its
+      # fecha límite has not passed — reporting it as such made «check» say
+      # the point was ready with a negative count of documents left.
+      def active_authorization(identifier, next_sequence: nil, on: Invoicehn.today)
         candidates = authorizations_for(identifier).reject { |a| a.expired?(on) }
-        return nil if candidates.empty?
-
         if next_sequence
-          covering = candidates.select { |a| a.covers?(sequence_to_correlative(identifier, next_sequence)) }
-          return covering.min_by { |a| a.range_start.sequence } if covering.any?
+          correlative = sequence_to_correlative(identifier, next_sequence)
+          candidates = candidates.select { |a| a.covers?(correlative) }
         end
 
         candidates.min_by { |a| a.range_start.sequence }
@@ -78,17 +81,29 @@ module Invoicehn
 
         if File.exist?(path) && !invoice.annulled?
           raise ImmutableDocument,
-                "la factura #{invoice.correlative} ya está registrada y no puede modificarse (Art. 41)"
+                "el documento #{invoice.correlative} ya está registrado y no puede modificarse (Art. 41)"
         end
 
         write_json(path, invoice.to_h)
         invoice
       end
 
+      # Removes a document whose issuance failed before it was complete — the
+      # ledger refused it, inside the allocator's block, so the counter never
+      # advanced past it — or the ANULADA form of a document whose annulment the
+      # ledger refused, before the issued form is saved back. Issuance calls
+      # this and nothing else should: an issued document is corrected by
+      # annulment (Art. 41), never deleted.
+      def delete_document(invoice)
+        path = @config.document_path(invoice.correlative, invoice.issue_date)
+        FileUtils.rm_f(path)
+        invoice
+      end
+
       def find(correlative)
         correlative = Correlative.parse(correlative.to_s)
         path = Dir.glob(File.join(@config.documents_dir, "*", "*", "#{correlative}.json")).first
-        raise DocumentNotFound, "no existe la factura #{correlative}" unless path
+        raise DocumentNotFound, "no existe el documento #{correlative}" unless path
 
         Invoice.from_h(read_json(path))
       end

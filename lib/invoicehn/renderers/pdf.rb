@@ -2,7 +2,7 @@
 
 module Invoicehn
   module Renderers
-    # Renders the Factura as a PDF.
+    # Renders a Factura, Nota de Crédito or Nota de Débito as a PDF.
     #
     # The legends are the same constants the text renderer uses, so the two
     # outputs cannot drift apart on the wording the decree fixes.
@@ -70,6 +70,7 @@ module Invoicehn
         issuer_section(pdf)
         document_section(pdf)
         customer_section(pdf)
+        reference_section(pdf)
         line_items_section(pdf)
         totals_section(pdf)
         footer_section(pdf)
@@ -94,7 +95,7 @@ module Invoicehn
       # Art. 10 num. 2, 3, 4, 5 and 7.
       def document_section(pdf)
         auth = @invoice.authorization
-        pdf.text e(Text::DOCUMENT_NAME), size: TITLE_SIZE, align: :center, style: :bold
+        pdf.text e(Text.title_for(@invoice)), size: TITLE_SIZE, align: :center, style: :bold
 
         pdf.text e(Text::ANNULLED_LEGEND), size: TITLE_SIZE, align: :center, style: :bold if @invoice.annulled?
 
@@ -126,6 +127,16 @@ module Invoicehn
           customer.supporting_documents.each { |label, value| pdf.text e("#{label}: #{value}") }
         end
 
+        pdf.move_down 8
+      end
+
+      # Art. 26 num. 3 and 4; Art. 28 num. 3 and 4.
+      def reference_section(pdf)
+        return unless @invoice.note?
+
+        pdf.text e(Text::REFERENCE_HEADING), style: :bold
+        Text.reference_lines(@invoice).each { |label, value| pdf.text e("#{label}: #{value}") }
+        pdf.text e("Motivo: #{@invoice.motivo}")
         pdf.move_down 8
       end
 
@@ -201,7 +212,7 @@ module Invoicehn
       end
 
       def footer_section(pdf)
-        if @invoice.summary.mixed_supply?
+        if @invoice.factura? && @invoice.summary.mixed_supply?
           pdf.text e("Esta factura sustenta crédito fiscal únicamente por las ventas gravadas: " \
                      "#{@invoice.summary.credito_fiscal_base} (Art. 11 num. 3)."), size: 8
           pdf.move_down 4
@@ -215,11 +226,20 @@ module Invoicehn
 
         pdf.text e(@invoice.notes), size: 8 unless @invoice.notes.empty?
 
+        # Art. 26 num. 7 — completed by hand by whoever receives the note.
+        if @invoice.credit_note?
+          pdf.move_down 10
+          Text::RECEIVER_FIELDS.each do |label|
+            pdf.text e("#{label}: #{"_" * 50}")
+            pdf.move_down 6
+          end
+        end
+
         pdf.move_down 6
         pdf.stroke_horizontal_rule
         pdf.move_down 4
-        # Art. 10 num. 6.
-        pdf.text e(Text::COPIES.fetch(@copy, Text::COPY_ORIGINAL)), align: :center, style: :bold
+        # Art. 10 num. 6; Arts. 25 and 27 num. 7.
+        pdf.text e(Text.copy_legend(@invoice, @copy)), align: :center, style: :bold
       end
     end
   end

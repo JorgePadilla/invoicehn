@@ -32,11 +32,13 @@ Metrics/AbcSize:
     - "lib/invoicehn/renderers/*.rb"
     - "lib/invoicehn/cli/*.rb"
 
-# Invoice#initialize takes the document's fields; there is no smaller set.
+# Invoice#initialize and Issuance#issue take the document's fields; there is
+# no smaller set.
 Metrics/ParameterLists:
   Max: 8
   Exclude:
     - "lib/invoicehn/invoice.rb"
+    - "lib/invoicehn/issuance.rb"
 
 Layout/LineLength:
   Max: 120

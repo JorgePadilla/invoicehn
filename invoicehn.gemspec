@@ -10,9 +10,10 @@ Gem::Specification.new do |spec|
 
   spec.summary     = "Facturación para Honduras conforme al Régimen de Facturación (Acuerdo 481-2017)"
   spec.description = <<~DESC
-    Genera Facturas que cumplen los requisitos de contenido de los Artículos 10 y 11 del
-    Reglamento del Régimen de Facturación (Acuerdo 481-2017 y sus reformas), incluyendo el
-    correlativo de 16 dígitos, control del CAI, rango autorizado y fecha límite de emisión,
+    Genera Facturas, Notas de Crédito y Notas de Débito que cumplen los requisitos de contenido
+    de los Artículos 10-11 y 25-28 del Reglamento del Régimen de Facturación (Acuerdo 481-2017
+    y sus reformas), incluyendo el correlativo de 16 dígitos con los códigos de tipo de
+    documento reformados, control del CAI, rango autorizado y fecha límite de emisión,
     discriminación del ISV por tarifa, y el redondeo estatutario del Artículo 9 de la Ley
     del Impuesto Sobre Ventas. Incluye biblioteca Ruby y una interfaz de terminal.
   DESC

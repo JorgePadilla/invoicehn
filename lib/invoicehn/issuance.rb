@@ -3,38 +3,64 @@
 require "date"
 
 module Invoicehn
-  # Issues a Factura: picks the authorization, allocates the correlativo,
-  # validates against the Reglamento, persists, and posts to the ledger.
+  # Issues a Factura, Nota de Crédito or Nota de Débito: picks the
+  # authorization, allocates the correlativo, validates against the
+  # Reglamento, persists, and posts to the ledger.
   #
-  # The whole sequence happens inside the allocator's lock, so a document is
+  # The whole sequence happens inside the allocator's block, so a document is
   # either fully recorded or its number was never consumed. Nothing here can
-  # produce a number without a document behind it.
+  # produce a number without a document behind it, and a failure part-way
+  # leaves nothing behind: if the ledger refuses the entry, the document just
+  # saved is deleted again before the counter would have advanced.
+  #
+  # The store, sequence and ledger are duck-typed collaborators; the README
+  # lists the exact methods each must answer, and Invoicehn::Testing checks
+  # an implementation against that list.
   class Issuance
+    DEFAULT_IDENTIFIER = "000-001-01"
+    CREDIT_NOTE_IDENTIFIER = "000-001-06"
+    DEBIT_NOTE_IDENTIFIER = "000-001-07"
+
     attr_reader :store, :sequence, :ledger
 
-    def initialize(config: Config.new, store: nil, sequence: nil, ledger: nil)
+    # The bundled JSON implementations are built only for the collaborators
+    # not injected. A host that injects all three never touches the file
+    # system: no Config is built, ~/.invoicehn is never read or created.
+    def initialize(config: nil, store: nil, sequence: nil, ledger: nil)
       @config   = config
-      @store    = store || Storage::JsonStore.new(config)
-      @sequence = sequence || Sequence.new(config)
-      @ledger   = ledger || Ledger::JsonlLedger.new(config)
+      @store    = store || Storage::JsonStore.new(default_config)
+      @sequence = sequence || Sequence.new(default_config)
+      @ledger   = ledger || Ledger::JsonlLedger.new(default_config)
     end
 
     # @param identifier [String] "NNN-NNN-NN", the establecimiento / punto de
-    #   emisión / tipo de documento triple. Defaults to the casa matriz's first
-    #   emission point issuing a Factura.
+    #   emisión / tipo de documento triple. Its last group decides the kind of
+    #   document: 01 Factura, 06 Nota de Crédito, 07 Nota de Débito. Each
+    #   identifier has its own counter and its own SAR authorization (Art. 59:
+    #   "La autorización será por punto de emisión y por tipo de documento").
     # @param issue_date [Date] pinned to today by default. Art. 43 obliges
     #   chronological custody, and a ledger whose numbering disagrees with its
     #   dates is the first thing an audit questions — so backdating is not
     #   offered through the CLI.
-    def issue(customer:, line_items:, identifier: "000-001-01", currency: "HNL",
-              exchange_rate: nil, notes: nil, issue_date: Date.today)
+    # @param reference [DocumentReference, String, Correlative, nil] notes
+    #   only: the document the note applies to. A correlative is looked up in
+    #   the store and its CAI and date copied; a DocumentReference is used as
+    #   given (for documents issued outside this store) and, if the store does
+    #   hold that document, checked against it.
+    # @param motivo [String, nil] notes only: "Motivo de la emisión del
+    #   documento" (Arts. 26 and 28 num. 4).
+    def issue(customer:, line_items:, identifier: DEFAULT_IDENTIFIER, currency: "HNL",
+              exchange_rate: nil, notes: nil, issue_date: Invoicehn.today,
+              reference: nil, motivo: nil)
       issuer = @store.issuer
       raise NoAuthorization, "no se ha configurado el emisor; ejecute «invoicehn setup»" if issuer.nil?
+
+      reference = resolve_reference(reference, customer)
 
       @sequence.allocate(identifier) do |correlative|
         authorization = pick_authorization(identifier, correlative, issue_date)
 
-        invoice = Invoice.new(
+        document = Invoice.new(
           correlative: correlative,
           issuer: issuer,
           customer: customer,
@@ -43,30 +69,60 @@ module Invoicehn
           issue_date: issue_date,
           currency: currency,
           exchange_rate: exchange_rate,
-          notes: notes
+          notes: notes,
+          reference: reference,
+          motivo: motivo
         )
 
-        invoice.validate!(on: issue_date)
-        @store.save_document(invoice)
-        @ledger.record(invoice, event: :emision)
-        invoice
+        document.validate!(on: issue_date)
+        persist(document)
       end
+    end
+
+    # A Nota de Crédito (tipo 06, Arts. 25-26): returns, discounts granted after
+    # the sale, or the reversal of an operation (Art. 4 num. 32).
+    def issue_credit_note(reference:, motivo:, customer:, line_items:,
+                          identifier: CREDIT_NOTE_IDENTIFIER, **options)
+      assert_type!(identifier, Correlative::NOTA_DE_CREDITO)
+      issue(customer: customer, line_items: line_items, identifier: identifier,
+            reference: reference, motivo: motivo, **options)
+    end
+
+    # A Nota de Débito (tipo 07, Arts. 27-28): an adjustment charged on top of
+    # a Comprobante Fiscal already issued (Art. 4 num. 31).
+    def issue_debit_note(reference:, motivo:, customer:, line_items:,
+                         identifier: DEBIT_NOTE_IDENTIFIER, **options)
+      assert_type!(identifier, Correlative::NOTA_DE_DEBITO)
+      issue(customer: customer, line_items: line_items, identifier: identifier,
+            reference: reference, motivo: motivo, **options)
     end
 
     # Art. 41 — annulment. The correlativo stays consumed; the sequence never
     # goes backwards.
-    def annul(correlative, reason:, on: Date.today)
+    # Works the same for a Factura and for a note.
+    #
+    # If the ledger refuses the entry, the issued form is put back. Otherwise
+    # the store would hold the ANULADA form with no :anulacion entry in the
+    # ledger, and a retry would fail with ImmutableDocument ("ya está
+    # anulada"), leaving no way to post the entry through this API.
+    def annul(correlative, reason:, on: Invoicehn.today)
       invoice = @store.find(correlative)
       annulled = invoice.annul(reason: reason, on: on)
 
       @store.save_document(annulled)
-      @ledger.record(annulled, event: :anulacion)
+      recorded = false
+      begin
+        @ledger.record(annulled, event: :anulacion)
+        recorded = true
+      ensure
+        restore(invoice, annulled) unless recorded
+      end
       annulled
     end
 
     # What `invoicehn check` reports: whether issuing is possible right now, and
     # what is about to go wrong.
-    def health(identifier: "000-001-01", on: Date.today)
+    def health(identifier: DEFAULT_IDENTIFIER, on: Invoicehn.today)
       issuer = @store.issuer
       next_correlative = @sequence.peek(identifier)
       authorizations = @store.authorizations_for(identifier)
@@ -81,7 +137,7 @@ module Invoicehn
         active_authorization: active,
         next_correlative: next_correlative,
         issued: @sequence.issued_count(identifier),
-        remaining: active ? (active.range_end.sequence - next_correlative.sequence + 1) : 0,
+        remaining: active ? [active.range_end.sequence - next_correlative.sequence + 1, 0].max : 0,
         days_remaining: active&.days_remaining(on),
         # Art. 42 — expired authorizations holding unused documents must be
         # reported to SAR within the first 10 business days of the next month.
@@ -91,6 +147,83 @@ module Invoicehn
     end
 
     private
+
+    def default_config = (@config ||= Config.new) # rubocop:disable Naming/MemoizedInstanceVariableName
+
+    # Saves, then posts to the ledger. If posting fails — for any reason,
+    # including an interrupt — the document is deleted again, so the store
+    # never holds a number the counter has not consumed. Without this a
+    # failing ledger left the document on disk and the counter behind it, and
+    # every later issue for that identifier failed with ImmutableDocument.
+    def persist(document)
+      @store.save_document(document)
+      recorded = false
+      begin
+        @ledger.record(document, event: :emision)
+        recorded = true
+      ensure
+        @store.delete_document(document) unless recorded
+      end
+      document
+    end
+
+    # Puts the issued form back after a failed annulment. save_document
+    # refuses to overwrite with a form that is not annulled, so the annulled
+    # one is deleted first.
+    def restore(issued, annulled)
+      @store.delete_document(annulled)
+      @store.save_document(issued)
+    end
+
+    def assert_type!(identifier, type)
+      return if identifier.to_s.split("-")[2] == type
+
+      raise ValidationError,
+            "el identificador #{identifier} no corresponde a #{Correlative::DOCUMENT_TYPES.fetch(type)} " \
+            "(tipo #{type})"
+    end
+
+    # Turns what the caller passed into a DocumentReference, cross-checking it
+    # against the original when the store holds it.
+    def resolve_reference(reference, customer)
+      return nil if reference.nil?
+
+      if reference.is_a?(DocumentReference)
+        original = @store.exists?(reference.correlative) ? @store.find(reference.correlative) : nil
+        check_reference_matches!(reference, original) if original
+      else
+        original = @store.find(reference)
+        reference = DocumentReference.from_document(original)
+      end
+
+      check_original!(original, customer) if original
+      reference
+    end
+
+    def check_reference_matches!(reference, original)
+      stored = DocumentReference.from_document(original)
+      return if stored == reference
+
+      raise ValidationError,
+            "los datos del documento de referencia no coinciden con #{original.correlative} " \
+            "registrado (CAI #{stored.cai}, fecha #{stored.issue_date})"
+    end
+
+    # Not article text but consistency: a note adjusts the operation of the
+    # document it points at, so that document must still stand and belong to
+    # the same acquirer.
+    def check_original!(original, customer)
+      if original.annulled?
+        raise ValidationError, "#{original.correlative} está ANULADA (Art. 41); no se le puede aplicar una nota"
+      end
+
+      return unless original.customer.rtn && customer.rtn
+      return if original.customer.rtn == customer.rtn
+
+      raise ValidationError,
+            "el adquirente de la nota (RTN #{customer.rtn.formatted}) no es el de " \
+            "#{original.correlative} (RTN #{original.customer.rtn.formatted})"
+    end
 
     def pick_authorization(identifier, correlative, on)
       authorization = @store.active_authorization(identifier, next_sequence: correlative.sequence, on: on)

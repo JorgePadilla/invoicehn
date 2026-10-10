@@ -2,11 +2,13 @@
 
 require_relative "invoicehn/version"
 require_relative "invoicehn/errors"
+require_relative "invoicehn/settings"
 require_relative "invoicehn/locale"
 require_relative "invoicehn/money"
 require_relative "invoicehn/spanish_numerals"
 require_relative "invoicehn/rtn"
 require_relative "invoicehn/correlative"
+require_relative "invoicehn/document_reference"
 require_relative "invoicehn/tax_treatment"
 require_relative "invoicehn/line_item"
 require_relative "invoicehn/tax_summary"
@@ -37,4 +39,30 @@ require_relative "invoicehn/renderers/pdf"
 # límite de emisión (Arts. 59-61) all remain the operator's obligations before
 # any document produced here is valid.
 module Invoicehn
+  # Invoicehn.configure / Invoicehn.today — see Invoicehn::Settings.
+  class << self
+    def settings
+      @settings ||= Settings.new
+    end
+
+    def configure
+      yield settings
+      settings
+    end
+
+    # Restores the defaults. Meant for test suites.
+    def reset_settings!
+      @settings = Settings.new
+    end
+
+    # Today's date in Honduras, as the configured clock reports it. Raises if
+    # the clock returns something that is not a Date — a Time or a String here
+    # would silently shift fiscal dates.
+    def today
+      value = settings.today.call
+      return value if value.instance_of?(Date)
+
+      raise Error, "el reloj configurado devolvió #{value.inspect}; se espera un Date"
+    end
+  end
 end

@@ -203,7 +203,7 @@ module Invoicehn
       def ask_exchange_rate(currency)
         ExchangeRate.new(
           rate: ask(Locale.t("invoice.exchange_rate")),
-          date: Date.today,
+          date: Invoicehn.today,
           currency: currency,
           source: @prompt.ask(Locale.t("invoice.exchange_source"),
                               default: ExchangeRate::DEFAULT_SOURCE)
