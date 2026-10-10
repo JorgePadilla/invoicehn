@@ -18,7 +18,12 @@ module Invoicehn
   # software. The default implementation writes an append-only JSONL book, which
   # satisfies the requirement standalone and feeds the Art. 53 num. 5 export.
   class Ledger
-    # Called once per issued or annulled document.
+    # Called once per issued or annulled document — a Factura or a Nota de
+    # Crédito or de Débito (see #document_type on the document).
+    #
+    # If this raises during an issue, Issuance deletes the document it just
+    # saved and the correlative is not consumed, so an implementation may
+    # refuse an entry safely. It must not swallow its own failures.
     #
     # @param invoice [Invoice]
     # @param event [Symbol] :emision or :anulacion
