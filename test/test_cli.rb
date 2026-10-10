@@ -154,7 +154,7 @@ class TestCli < Minitest::Test
       _out, err, status = run_cli("show", "000-001-01-00009999", home: home)
 
       refute_predicate status, :success?
-      assert_match(/no existe la factura/, err)
+      assert_match(/no existe el documento/, err)
     end
   end
 

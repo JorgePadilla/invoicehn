@@ -46,7 +46,7 @@ module Invoicehn
       def self.export_csv(invoices)
         headers = %w[
           correlativo fecha estado cai cliente rtn_cliente moneda
-          subtotal descuentos isv total
+          subtotal descuentos isv total tipo documento_referencia motivo
         ]
 
         rows = invoices.map do |inv|
@@ -61,7 +61,10 @@ module Invoicehn
             inv.subtotal.to_fixed,
             inv.discount.to_fixed,
             inv.isv_total.to_fixed,
-            inv.total.to_fixed
+            inv.total.to_fixed,
+            inv.document_type,
+            inv.reference&.correlative&.to_s,
+            inv.motivo
           ]
         end
 

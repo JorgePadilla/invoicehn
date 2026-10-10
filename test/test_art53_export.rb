@@ -62,7 +62,8 @@ class TestArt53Export < Minitest::Test
     lines = csv.lines(chomp: true)
 
     assert_equal 2, lines.size
-    assert_equal "correlativo,fecha,estado,cai,cliente,rtn_cliente,moneda,subtotal,descuentos,isv,total",
+    assert_equal "correlativo,fecha,estado,cai,cliente,rtn_cliente,moneda,subtotal,descuentos,isv,total," \
+                 "tipo,documento_referencia,motivo",
                  lines.first
     assert lines.last.start_with?("000-001-01-00000001,")
   end
@@ -80,10 +81,12 @@ class TestArt53Export < Minitest::Test
 
   def test_csv_amounts_carry_two_decimals
     csv = Invoicehn::Renderers::Json.export_csv([invoice])
-    fields = csv.lines(chomp: true).last.split(",")
+    header, row = csv.lines(chomp: true).map { |line| line.split(",", -1) }
+    fields = header.zip(row).to_h
 
-    assert_match(/\A\d+\.\d{2}\z/, fields[-1])
-    assert_match(/\A\d+\.\d{2}\z/, fields[-2])
+    %w[subtotal descuentos isv total].each do |column|
+      assert_match(/\A\d+\.\d{2}\z/, fields[column])
+    end
   end
 
   def test_an_empty_export_still_produces_a_header

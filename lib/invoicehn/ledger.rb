@@ -63,6 +63,8 @@ module Invoicehn
           "recorded_at" => Time.now.utc.iso8601,
           "event" => event.to_s,
           "correlative" => invoice.correlative.to_s,
+          "document_type" => invoice.document_type,
+          "reference" => invoice.reference&.correlative&.to_s,
           "issue_date" => invoice.issue_date.iso8601,
           "cai" => invoice.authorization.cai,
           "customer" => invoice.customer.to_s,

@@ -2,7 +2,8 @@
 
 module Invoicehn
   module Renderers
-    # Renders the Factura as plain text for the terminal or a printer.
+    # Renders a Factura, Nota de Crédito or Nota de Débito as plain text for
+    # the terminal or a printer.
     #
     # Every legend here is legal text fixed by the Reglamento, not interface
     # copy, so it lives as a constant rather than in the i18n catalog: an
@@ -13,9 +14,49 @@ module Invoicehn
       # Art. 10 num. 2 — "Denominación del documento: 'Factura'".
       DOCUMENT_NAME = "FACTURA"
 
+      # Art. 25 num. 2 — "Nota de Crédito"; Art. 27 num. 2 — "Nota de Débito".
+      TITLES = {
+        Correlative::FACTURA => DOCUMENT_NAME,
+        Correlative::NOTA_DE_CREDITO => "NOTA DE CRÉDITO",
+        Correlative::NOTA_DE_DEBITO => "NOTA DE DÉBITO"
+      }.freeze
+
       # Art. 10 num. 6 — "Destino de los ejemplares de la factura".
       COPY_ORIGINAL = "Original: Cliente"
       COPY_ISSUER   = "Copia: Obligado tributario emisor"
+
+      # Art. 25 num. 7 and Art. 27 num. 7 word the issuer's copy differently:
+      # "Copia: Obligado Tributario".
+      COPY_ISSUER_NOTE = "Copia: Obligado Tributario"
+
+      # Art. 26 num. 3 — the block that identifies the original document.
+      REFERENCE_HEADING = "Documento al que se aplica la nota"
+
+      # Art. 26 num. 7 — "Apellidos, Nombres, Tarjeta de Identidad o documento
+      # de identificación, y firma de la persona que recibe la Nota de
+      # Crédito." Filled in by hand when the note is delivered.
+      RECEIVER_FIELDS = ["Recibido por (nombres y apellidos)", "Identidad o documento de identificación",
+                         "Firma"].freeze
+
+      def self.title_for(invoice) = TITLES.fetch(invoice.document_type, invoice.document_name.upcase)
+
+      def self.copy_legend(invoice, copy)
+        return COPY_ORIGINAL unless copy == :copia
+
+        invoice.factura? ? COPY_ISSUER : COPY_ISSUER_NOTE
+      end
+
+      # [label, value] pairs printed for a note's reference and motivo.
+      def self.reference_lines(invoice)
+        reference = invoice.reference
+        return [] unless invoice.note? && reference
+
+        [
+          ["#{reference.document_type_name} No.", reference.correlative.to_s],
+          ["CAI", reference.cai],
+          ["Fecha de emisión", reference.issue_date.to_s]
+        ]
+      end
 
       # Art. 41 — "consignando en los mismos la leyenda 'ANULADA'".
       ANNULLED_LEGEND = "ANULADA"
@@ -40,6 +81,7 @@ module Invoicehn
           issuer_block,
           document_block,
           customer_block,
+          reference_block,
           line_items_block,
           totals_block,
           footer_block
@@ -86,7 +128,7 @@ module Invoicehn
       def document_block
         auth = @invoice.authorization
         lines = []
-        lines << centre(DOCUMENT_NAME)
+        lines << centre(self.class.title_for(@invoice))
         lines << centre(ANNULLED_LEGEND) if @invoice.annulled?
         lines << ""
         lines << pair("No.: #{@invoice.correlative}", "Fecha de emisión: #{@invoice.issue_date}")
@@ -115,6 +157,17 @@ module Invoicehn
           customer.supporting_documents.each { |label, value| lines << "#{label}: #{value}" }
         end
 
+        lines << rule
+        lines.join("\n")
+      end
+
+      # Art. 26 num. 3 and 4; Art. 28 num. 3 and 4.
+      def reference_block
+        return nil unless @invoice.note?
+
+        lines = [REFERENCE_HEADING]
+        lines += self.class.reference_lines(@invoice).map { |label, value| "  #{label}: #{value}" }
+        lines += wrap("Motivo: #{@invoice.motivo}")
         lines << rule
         lines.join("\n")
       end
@@ -228,7 +281,7 @@ module Invoicehn
         # Art. 11 num. 3 — where the invoice mixes exempt and taxed sales, only
         # the taxed sales support crédito fiscal. Saying so on the document
         # keeps the buyer from over-claiming.
-        if @invoice.summary.mixed_supply?
+        if @invoice.factura? && @invoice.summary.mixed_supply?
           lines += wrap("Esta factura sustenta crédito fiscal únicamente por las ventas gravadas: " \
                         "#{@invoice.summary.credito_fiscal_base} (Art. 11 num. 3).")
           lines << ""
@@ -241,8 +294,14 @@ module Invoicehn
 
         lines += wrap(@invoice.notes) unless @invoice.notes.empty?
 
-        # Art. 10 num. 6.
-        lines << centre(COPIES.fetch(@copy, COPY_ORIGINAL))
+        # Art. 26 num. 7.
+        if @invoice.credit_note?
+          RECEIVER_FIELDS.each { |label| lines << "#{label}: #{"_" * [@width - label.length - 2, 10].max}" }
+          lines << ""
+        end
+
+        # Art. 10 num. 6; Arts. 25 and 27 num. 7.
+        lines << centre(self.class.copy_legend(@invoice, @copy))
         lines << rule("═")
         lines.join("\n")
       end
