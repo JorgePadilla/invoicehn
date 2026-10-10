@@ -48,20 +48,60 @@ class TestArt10Correlative < Minitest::Test
     assert_equal "Factura", factura.document_type_name
   end
 
-  def test_known_document_type_codes
+  # The table in force after Acuerdo 609-2017, Art. 1 (La Gaceta 34,457), as
+  # it reads in the consolidated text: Arts. 10, 15, 17, 18, 20, 23, 25, 27,
+  # 29 and 33.
+  def test_known_document_type_codes_follow_the_reformed_table
     expected = {
-      "01" => "Factura", "02" => "Factura Prevalorada", "03" => "Ticket",
-      "04" => "Recibo por Honorarios Profesionales", "05" => "Boleta de Compra",
-      "06" => "Constancia de Donación", "07" => "Nota de Crédito",
-      "08" => "Nota de Débito", "10" => "Comprobante de Retención"
+      "01" => "Factura",
+      "04" => "Recibo por Honorarios Profesionales",
+      "05" => "Comprobante de Retención",
+      "06" => "Nota de Crédito",
+      "07" => "Nota de Débito",
+      "08" => "Guía de Remisión",
+      "09" => "Ticket",
+      "10" => "Factura Prevalorada",
+      "11" => "Boleta de Compra",
+      "12" => "Constancia de Donación"
     }
 
     assert_equal expected, C::DOCUMENT_TYPES
   end
 
-  # 09 was never confirmed in the decree, so it must not be accepted.
-  def test_unconfirmed_document_type_09_is_rejected
-    assert_raises(Invoicehn::ValidationError) { C.parse("000-001-09-00000001") }
+  # Art. 25 num. 5 lit. c) — "06 = Nota de Crédito"; Art. 27 num. 5 lit. c) —
+  # "07 = Nota de Débito". The 2017 original had them at 07 and 08.
+  def test_notes_carry_the_reformed_codes
+    credit = C.parse("000-001-06-00000001")
+    debit = C.parse("000-001-07-00000001")
+
+    assert_predicate credit, :credit_note?
+    assert_equal "Nota de Crédito", credit.document_type_name
+    assert_predicate debit, :debit_note?
+    assert_equal "Nota de Débito", debit.document_type_name
+    assert_equal "Guía de Remisión", C.parse("000-001-08-00000001").document_type_name
+  end
+
+  # 02 and 03 existed only in the 2017 original; the reform left them
+  # unassigned.
+  def test_codes_unassigned_after_the_reform_are_rejected
+    %w[02 03 13 99 00].each do |code|
+      assert_raises(Invoicehn::ValidationError, "debió rechazar #{code}") do
+        C.parse("000-001-#{code}-00000001")
+      end
+    end
+  end
+
+  # Art. 17 num. 4 lit. a) as reformed — "09=Ticket".
+  def test_document_type_09_is_ticket
+    assert_equal "Ticket", C.parse("000-001-09-00000001").document_type_name
+  end
+
+  # Arts. 6 and 7 split the documents into Comprobantes Fiscales and
+  # Documentos Complementarios; a note must refer to the former.
+  def test_comprobantes_fiscales_and_documentos_complementarios
+    assert_equal(%w[01 04 09 10 11 12], C::COMPROBANTES_FISCALES.sort)
+    assert_equal(%w[05 06 07 08], C::DOCUMENTOS_COMPLEMENTARIOS.sort)
+    assert_equal C::DOCUMENT_TYPES.keys.sort, (C::COMPROBANTES_FISCALES + C::DOCUMENTOS_COMPLEMENTARIOS).sort
   end
 
   # "la numeración correlativa ... deberá iniciarse en uno (00000001)"

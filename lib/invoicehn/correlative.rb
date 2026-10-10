@@ -17,22 +17,54 @@ module Invoicehn
     SEQUENCE_MAX = 99_999_999
     PATTERN = /\A(\d{3})-(\d{3})-(\d{2})-(\d{8})\z/
 
-    # Codes verified in the decree. 09 is deliberately absent: it was not
-    # confirmed in the text, and guessing a fiscal document code is not worth
-    # the risk.
+    # Art. 10 num. 7 lit. c) and its counterparts in every other document type.
+    # The codes are the ones in force after Acuerdo 609-2017 (La Gaceta 34,457,
+    # 2 Oct 2017), whose Art. 1 rewrote lit. c) of Arts. 15, 17, 20, 23, 25,
+    # 27, 29 and 33. Line numbers refer to doc/fuentes/acuerdo_481_2017_consolidado.txt:
+    #
+    #   01 Factura                              Art. 10 num. 7 c)  (l. 626)
+    #   04 Recibo por Honorarios Profesionales  Art. 18 num. 7 c)  (l. 1039) — not reformed
+    #   05 Comprobante de Retención             Art. 33 num. 5 c)  (l. 1750)
+    #   06 Nota de Crédito                      Art. 25 num. 5 c)  (l. 1345)
+    #   07 Nota de Débito                       Art. 27 num. 5 c)  (l. 1438)
+    #   08 Guía de Remisión                     Art. 29 num. 4 c)  (l. 1535)
+    #   09 Ticket                               Art. 17 num. 4 a)  (l. 969) *
+    #   10 Factura Prevalorada                  Art. 15 num. 6 c)  (l. 889)
+    #   11 Boleta de Compra                     Art. 20 num. 5 c)  (l. 1122)
+    #   12 Constancia de Donación               Art. 23 num. 7 c)  (l. 1259)
+    #
+    # * Art. 17's closing sentence still reads "El Ticket tendrá como código 03"
+    #   (l. 988); 609-2017 changed num. 4 only. The table follows the reformed
+    #   numeral. A Ticket's own number is ten digits, not this 16-digit shape.
+    #
+    # 02 and 03 belonged to the 2017 original (Prevalorada and Ticket) and are
+    # assigned to nothing after the reform, so they are rejected. Version 0.1.0
+    # shipped the original table; see the CHANGELOG for the migration.
     DOCUMENT_TYPES = {
       "01" => "Factura",
-      "02" => "Factura Prevalorada",
-      "03" => "Ticket",
       "04" => "Recibo por Honorarios Profesionales",
-      "05" => "Boleta de Compra",
-      "06" => "Constancia de Donación",
-      "07" => "Nota de Crédito",
-      "08" => "Nota de Débito",
-      "10" => "Comprobante de Retención"
+      "05" => "Comprobante de Retención",
+      "06" => "Nota de Crédito",
+      "07" => "Nota de Débito",
+      "08" => "Guía de Remisión",
+      "09" => "Ticket",
+      "10" => "Factura Prevalorada",
+      "11" => "Boleta de Compra",
+      "12" => "Constancia de Donación"
     }.freeze
 
     FACTURA = "01"
+    NOTA_DE_CREDITO = "06"
+    NOTA_DE_DEBITO = "07"
+
+    # Art. 6 — "Son Comprobantes Fiscales": Factura, Factura Prevalorada,
+    # Ticket, Recibo por Honorarios Profesionales, Boleta de Compra and
+    # Constancia de Donación.
+    COMPROBANTES_FISCALES = %w[01 10 09 04 11 12].freeze
+
+    # Art. 7 — "Son Documentos Complementarios": Notas de Crédito, Notas de
+    # Débito, Guías de Remisión and Comprobantes de Retención.
+    DOCUMENTOS_COMPLEMENTARIOS = %w[06 07 08 05].freeze
 
     attr_reader :establishment, :emission_point, :document_type, :sequence
 
@@ -87,6 +119,10 @@ module Invoicehn
 
     def document_type_name = DOCUMENT_TYPES.fetch(@document_type)
     def factura? = @document_type == FACTURA
+    def credit_note? = @document_type == NOTA_DE_CREDITO
+    def debit_note? = @document_type == NOTA_DE_DEBITO
+    def note? = credit_note? || debit_note?
+    def comprobante_fiscal? = COMPROBANTES_FISCALES.include?(@document_type)
 
     def succ
       raise RangeExhausted, "el correlativo #{self} es el último de la serie" if last?
