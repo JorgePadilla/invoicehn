@@ -101,6 +101,17 @@ consolidado) y `doc/fuentes/acuerdo_609_2017_gaceta_34457_ocr.txt`.
 - El Art. 17 conserva la frase "El Ticket tendrá como código 03" (l. 988)
   aunque el 609-2017 reformó su num. 4 a "09=Ticket"; la tabla sigue el
   numeral reformado.
+- Las notas se rechazan en moneda extranjera: el permiso del párrafo final del
+  Art. 11 habla sólo de "facturas" y los Arts. 26 num. 9 y 28 num. 8 piden la
+  Moneda Nacional Lempira. Una factura en dólares se ajustaría con una nota en
+  lempiras.
+- La referencia de la Nota de Crédito debe ser un Comprobante Fiscal del Art. 6
+  (01, 04, 09, 10, 11, 12), no sólo una Factura; la de la Nota de Débito acepta
+  cualquier tipo reconocido por el "o el documento" del Art. 28 num. 3 lit. b.
+- Ningún artículo (4 num. 31-32, 25-28) fija un monto máximo para las notas.
+- `Issuance#annul` todavía guarda la forma anulada antes del asiento contable:
+  si el libro falla, el documento queda anulado sin asiento. Queda para una
+  versión siguiente.
 
 ## [0.1.0] — 2026-08-28
 
