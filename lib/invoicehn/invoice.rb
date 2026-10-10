@@ -29,7 +29,7 @@ module Invoicehn
       @customer      = customer
       @authorization = authorization
       @line_items    = Array(line_items).freeze
-      @issue_date    = coerce_date(issue_date || Date.today)
+      @issue_date    = coerce_date(issue_date || Invoicehn.today)
       @currency      = currency.to_s.upcase
       @exchange_rate = exchange_rate
       @status        = status
@@ -75,7 +75,7 @@ module Invoicehn
 
     # Art. 41. Returns a new invoice carrying the ANULADA legend; the original
     # object is untouched and the correlative stays consumed.
-    def annul(reason:, on: Date.today)
+    def annul(reason:, on: Invoicehn.today)
       raise ImmutableDocument, "la factura #{@correlative} ya está anulada" if annulled?
 
       reason = reason.to_s.strip
@@ -86,17 +86,17 @@ module Invoicehn
 
     # Raises on errors only. Warnings (Art. 11 num. 3's mixed-supply notice) are
     # information the document should carry, not grounds to refuse it.
-    def validate!(on: Date.today)
+    def validate!(on: Invoicehn.today)
       errors = Compliance::Validator.new(self, on: on).errors
       raise ComplianceError, errors if errors.any?
 
       self
     end
 
-    def compliant?(on: Date.today) = Compliance::Validator.new(self, on: on).valid?
+    def compliant?(on: Invoicehn.today) = Compliance::Validator.new(self, on: on).valid?
 
-    def violations(on: Date.today) = Compliance::Validator.new(self, on: on).violations
-    def warnings(on: Date.today) = Compliance::Validator.new(self, on: on).warnings
+    def violations(on: Invoicehn.today) = Compliance::Validator.new(self, on: on).violations
+    def warnings(on: Invoicehn.today) = Compliance::Validator.new(self, on: on).warnings
 
     def to_h
       {

@@ -27,7 +27,7 @@ module Invoicehn
     #   dates is the first thing an audit questions — so backdating is not
     #   offered through the CLI.
     def issue(customer:, line_items:, identifier: "000-001-01", currency: "HNL",
-              exchange_rate: nil, notes: nil, issue_date: Date.today)
+              exchange_rate: nil, notes: nil, issue_date: Invoicehn.today)
       issuer = @store.issuer
       raise NoAuthorization, "no se ha configurado el emisor; ejecute «invoicehn setup»" if issuer.nil?
 
@@ -55,7 +55,7 @@ module Invoicehn
 
     # Art. 41 — annulment. The correlativo stays consumed; the sequence never
     # goes backwards.
-    def annul(correlative, reason:, on: Date.today)
+    def annul(correlative, reason:, on: Invoicehn.today)
       invoice = @store.find(correlative)
       annulled = invoice.annul(reason: reason, on: on)
 
@@ -66,7 +66,7 @@ module Invoicehn
 
     # What `invoicehn check` reports: whether issuing is possible right now, and
     # what is about to go wrong.
-    def health(identifier: "000-001-01", on: Date.today)
+    def health(identifier: "000-001-01", on: Invoicehn.today)
       issuer = @store.issuer
       next_correlative = @sequence.peek(identifier)
       authorizations = @store.authorizations_for(identifier)

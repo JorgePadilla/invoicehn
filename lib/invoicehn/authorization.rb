@@ -47,9 +47,9 @@ module Invoicehn
     # perderán su validez y no podrán ser utilizados cuando se haya vencido el
     # plazo de tiempo autorizado." The fecha límite is the last day on which a
     # document may be issued, so it is still usable on that date itself.
-    def expired?(on = Date.today) = on > @limit_date
+    def expired?(on = Invoicehn.today) = on > @limit_date
 
-    def days_remaining(from = Date.today) = (@limit_date - from).to_i
+    def days_remaining(from = Invoicehn.today) = (@limit_date - from).to_i
 
     def covers?(correlative)
       correlative = Correlative.parse(correlative.to_s)
@@ -62,13 +62,13 @@ module Invoicehn
     def capacity = @range_end.sequence - @range_start.sequence + 1
 
     # Whether this authorization can still be used to issue the given number.
-    def usable?(correlative, on: Date.today)
+    def usable?(correlative, on: Invoicehn.today)
       !expired?(on) && covers?(correlative)
     end
 
     # Raises with the specific reason, so the caller can report which of the two
     # conditions failed rather than a generic refusal.
-    def assert_usable!(correlative, on: Date.today)
+    def assert_usable!(correlative, on: Invoicehn.today)
       if expired?(on)
         raise AuthorizationExpired,
               "la fecha límite de emisión (#{@limit_date}) ya venció; " \

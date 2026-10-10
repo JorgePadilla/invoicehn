@@ -58,7 +58,7 @@ module Invoicehn
 
       # The authorization that should be used next for an identifier: still
       # current, and with room left in its range.
-      def active_authorization(identifier, next_sequence: nil, on: Date.today)
+      def active_authorization(identifier, next_sequence: nil, on: Invoicehn.today)
         candidates = authorizations_for(identifier).reject { |a| a.expired?(on) }
         return nil if candidates.empty?
 

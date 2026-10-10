@@ -63,7 +63,7 @@ module Invoicehn
         return nil if data.nil?
         return ExchangeRate.from_h(data) if data.is_a?(Hash)
 
-        ExchangeRate.new(rate: to_decimal(data), date: Date.today, currency: currency)
+        ExchangeRate.new(rate: to_decimal(data), date: Invoicehn.today, currency: currency)
       end
 
       private

@@ -31,7 +31,7 @@ module Invoicehn
 
       attr_reader :invoice, :on
 
-      def initialize(invoice, on: Date.today)
+      def initialize(invoice, on: Invoicehn.today)
         @invoice = invoice
         @on = on
       end
