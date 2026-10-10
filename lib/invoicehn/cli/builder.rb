@@ -21,8 +21,21 @@ module Invoicehn
           line_items: Array(data["items"] || data["line_items"]).map { |i| build_line(i, currency) },
           currency: currency,
           exchange_rate: build_rate(data["exchange_rate"], currency),
-          notes: data["notes"]
+          notes: data["notes"],
+          # Notes only (identifier NNN-NNN-06 or -07): the correlative of a
+          # document in the store, or {correlative, cai, issue_date} for one
+          # issued elsewhere — Arts. 26 and 28 num. 3 and 4.
+          reference: build_reference(data["reference"]),
+          motivo: data["motivo"]
         )
+      end
+
+      def build_reference(value)
+        case value
+        when nil, "" then nil
+        when Hash then DocumentReference.from_h(value)
+        else value.to_s
+        end
       end
 
       def build_customer(data)

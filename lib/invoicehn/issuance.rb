@@ -23,11 +23,14 @@ module Invoicehn
 
     attr_reader :store, :sequence, :ledger
 
-    def initialize(config: Config.new, store: nil, sequence: nil, ledger: nil)
+    # The bundled JSON implementations are built only for the collaborators
+    # not injected. A host that injects all three never touches the file
+    # system: no Config is built, ~/.invoicehn is never read or created.
+    def initialize(config: nil, store: nil, sequence: nil, ledger: nil)
       @config   = config
-      @store    = store || Storage::JsonStore.new(config)
-      @sequence = sequence || Sequence.new(config)
-      @ledger   = ledger || Ledger::JsonlLedger.new(config)
+      @store    = store || Storage::JsonStore.new(default_config)
+      @sequence = sequence || Sequence.new(default_config)
+      @ledger   = ledger || Ledger::JsonlLedger.new(default_config)
     end
 
     # @param identifier [String] "NNN-NNN-NN", the establecimiento / punto de
@@ -133,6 +136,8 @@ module Invoicehn
     end
 
     private
+
+    def default_config = (@config ||= Config.new) # rubocop:disable Naming/MemoizedInstanceVariableName
 
     # Saves, then posts to the ledger. If posting fails — for any reason,
     # including an interrupt — the document is deleted again, so the store

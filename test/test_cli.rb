@@ -90,6 +90,28 @@ class TestCli < Minitest::Test
     end
   end
 
+  # Nota de Crédito from a file: its own identifier (06) and authorization,
+  # and the reference to the Factura it adjusts (Art. 26 num. 3-4).
+  def test_issue_a_credit_note_from_a_file
+    with_configured_cli do |home|
+      run_cli("issue", "-f", sale_file(home), home: home)
+      run_cli("auth", "add", "--cai", "CAI-NOTAS-06", "--from", "000-001-06-00000001",
+              "--to", "000-001-06-00000100", "--limit", (Date.today + 180).to_s, home: home)
+      note = File.join(home, "nota.json")
+      File.write(note, JSON.generate(JSON.parse(File.read(sale_file(home))).merge(
+                                       "reference" => "000-001-01-00000001", "motivo" => "Devolución de 2 bolsas"
+                                     )))
+
+      out, err, status = run_cli("issue", "-f", note, "--identifier", "000-001-06", home: home)
+
+      assert_predicate status, :success?, err
+      assert_includes out, "NOTA DE CRÉDITO"
+      assert_includes out, "000-001-06-00000001"
+      assert_includes out, "Factura No.: 000-001-01-00000001"
+      assert_includes out, "Motivo: Devolución de 2 bolsas"
+    end
+  end
+
   def test_numbering_advances_across_invocations
     with_configured_cli do |home|
       file = sale_file(home)
