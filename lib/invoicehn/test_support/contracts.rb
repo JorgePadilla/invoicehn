@@ -114,6 +114,9 @@ module Invoicehn
 
         refute store.exists?(document.correlative)
         assert_raises(DocumentNotFound) { store.find(document.correlative) }
+      ensure
+        # A failure above must not leave the sample behind for the next test.
+        store&.delete_document(document) if document
       end
 
       # Art. 41 — the annulled form replaces the record; the number stays.

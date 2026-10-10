@@ -146,6 +146,10 @@ class TestIssuance < Minitest::Test
         issuance.issue_credit_note(reference: original.correlative, motivo: "x", customer: cliente,
                                    line_items: [build_line], identifier: "000-001-07")
       end
+      assert_raises(Invoicehn::ValidationError) do
+        issuance.issue_debit_note(reference: original.correlative, motivo: "x", customer: cliente,
+                                  line_items: [build_line], identifier: "000-001-06")
+      end
     end
   end
 
@@ -197,6 +201,25 @@ class TestIssuance < Minitest::Test
 
       assert_equal "000-001-01-00000001", factura(healthy).correlative.to_s
       assert_equal 1, store.all.size
+    end
+  end
+
+  # The same for an annulment: if the ledger refuses the :anulacion entry, the
+  # store must not keep the ANULADA form — a retry would otherwise fail with
+  # "ya está anulada" and the entry could never be posted.
+  def test_a_failing_ledger_leaves_the_annulment_undone
+    with_issuance do |issuance, store, config|
+      original = factura(issuance)
+      failing = Invoicehn::Issuance.new(config: config, store: store, ledger: FailingLedger.new)
+
+      assert_raises(IOError) { failing.annul(original.correlative, reason: "Precio equivocado") }
+      refute_predicate store.find(original.correlative), :annulled?
+      assert_equal original.to_h, store.find(original.correlative).to_h
+
+      annulled = issuance.annul(original.correlative, reason: "Precio equivocado")
+
+      assert_predicate store.find(original.correlative), :annulled?
+      assert_equal "Precio equivocado", annulled.annulment_reason
     end
   end
 

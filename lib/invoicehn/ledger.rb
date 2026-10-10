@@ -23,7 +23,8 @@ module Invoicehn
     #
     # If this raises during an issue, Issuance deletes the document it just
     # saved and the correlative is not consumed, so an implementation may
-    # refuse an entry safely. It must not swallow its own failures.
+    # refuse an entry safely. During an annulment, Issuance puts the issued
+    # form back. It must not swallow its own failures.
     #
     # @param invoice [Invoice]
     # @param event [Symbol] :emision or :anulacion

@@ -28,6 +28,10 @@ consolidado) y `doc/fuentes/acuerdo_609_2017_gaceta_34457_ocr.txt`.
   documento, el documento quedaba en el store y el contador no avanzaba: toda
   emisión posterior de ese identificador fallaba con `ImmutableDocument`. Ahora
   el documento se borra si el asiento falla, dentro del bloque de `allocate`.
+- **Anulación trabada.** Si el libro contable rechazaba el asiento de
+  `:anulacion`, el store quedaba con la forma ANULADA sin asiento, y reintentar
+  fallaba con «ya está anulada». Ahora `Issuance#annul` vuelve a guardar la
+  forma emitida (borra la anulada y guarda la original) si el asiento falla.
 - **Fechas en servidores UTC.** Honduras es UTC-6; `Date.today` en un servidor UTC
   estampaba la fecha de mañana desde las 18:00. Todas las fechas por defecto
   salen de un reloj configurable (ver *Añadido*).

@@ -100,12 +100,23 @@ module Invoicehn
     # Art. 41 — annulment. The correlativo stays consumed; the sequence never
     # goes backwards.
     # Works the same for a Factura and for a note.
+    #
+    # If the ledger refuses the entry, the issued form is put back. Otherwise
+    # the store would hold the ANULADA form with no :anulacion entry in the
+    # ledger, and a retry would fail with ImmutableDocument ("ya está
+    # anulada"), leaving no way to post the entry through this API.
     def annul(correlative, reason:, on: Invoicehn.today)
       invoice = @store.find(correlative)
       annulled = invoice.annul(reason: reason, on: on)
 
       @store.save_document(annulled)
-      @ledger.record(annulled, event: :anulacion)
+      recorded = false
+      begin
+        @ledger.record(annulled, event: :anulacion)
+        recorded = true
+      ensure
+        restore(invoice, annulled) unless recorded
+      end
       annulled
     end
 
@@ -154,6 +165,14 @@ module Invoicehn
         @store.delete_document(document) unless recorded
       end
       document
+    end
+
+    # Puts the issued form back after a failed annulment. save_document
+    # refuses to overwrite with a form that is not annulled, so the annulled
+    # one is deleted first.
+    def restore(issued, annulled)
+      @store.delete_document(annulled)
+      @store.save_document(issued)
     end
 
     def assert_type!(identifier, type)

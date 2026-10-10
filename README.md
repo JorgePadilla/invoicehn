@@ -535,7 +535,7 @@ sistema de archivos: no construye `Config` ni lee `~/.invoicehn`.
 | `authorizations_for(identifier)` → `Array<Authorization>` | Todas las autorizaciones de ese `NNN-NNN-TT`, vencidas incluidas. |
 | `active_authorization(identifier, next_sequence:, on:)` → `Authorization` o `nil` | Una autorización no vencida en `on` cuyo rango **cubra** `next_sequence` (la de menor inicio si hay varias). `nil` si ninguna lo cubre; no devolver una agotada. Con `next_sequence: nil`, la vigente de menor inicio. |
 | `save_document(document)` → `document` | Guarda el documento (`document.to_h` es su forma serializable). Si ya existe y el nuevo **no** está anulado, lanza `Invoicehn::ImmutableDocument`; la forma anulada reemplaza a la emitida (Art. 41). |
-| `delete_document(document)` → `document` | Borra el documento. `Issuance` lo llama **sólo** para deshacer una emisión cuyo asiento contable falló, dentro del bloque de `allocate`. |
+| `delete_document(document)` → `document` | Borra el documento. `Issuance` lo llama **sólo** para deshacer una emisión cuyo asiento contable falló (dentro del bloque de `allocate`) o una anulación cuyo asiento falló (borra la forma ANULADA y vuelve a guardar la emitida). |
 | `find(correlative)` → `Invoice` | El documento con ese correlativo (`String` o `Correlative`); `Invoicehn::DocumentNotFound` si no existe. `find(c).to_h` debe ser igual a lo guardado, incluidos `reference` y `motivo` de las notas. |
 | `exists?(correlative)` → `Boolean` | |
 

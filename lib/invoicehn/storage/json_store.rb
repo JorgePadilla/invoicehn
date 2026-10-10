@@ -90,8 +90,10 @@ module Invoicehn
 
       # Removes a document whose issuance failed before it was complete — the
       # ledger refused it, inside the allocator's block, so the counter never
-      # advanced past it. Issuance calls this and nothing else should: an
-      # issued document is corrected by annulment (Art. 41), never deleted.
+      # advanced past it — or the ANULADA form of a document whose annulment the
+      # ledger refused, before the issued form is saved back. Issuance calls
+      # this and nothing else should: an issued document is corrected by
+      # annulment (Art. 41), never deleted.
       def delete_document(invoice)
         path = @config.document_path(invoice.correlative, invoice.issue_date)
         FileUtils.rm_f(path)
