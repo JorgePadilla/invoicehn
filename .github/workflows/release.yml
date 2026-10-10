@@ -1,0 +1,31 @@
+name: Publicar en RubyGems
+
+# Publica la gema con Trusted Publishing (OIDC): RubyGems confía en este
+# workflow de este repo, así que no hay API key ni OTP guardados en ningún
+# lado. Se dispara a mano desde Actions → «Publicar en RubyGems» → Run workflow.
+#
+# `rake release` ya exige las pruebas y rubocop en verde (`task release: :check`
+# en el Rakefile) y no vuelve a crear el tag si la versión ya está taggeada.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write   # empujar el tag vX.Y.Z si todavía no existe
+  id-token: write   # el token OIDC que RubyGems cambia por una credencial de un solo uso
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+
+      - uses: rubygems/release-gem@v1
